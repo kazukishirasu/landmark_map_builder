@@ -215,29 +215,33 @@ void record_landmark::visualize_landmark(std::vector<Landmark>& lm_list)
     marker.scale.x = 0.5;
     marker.scale.y = 0.5;
     marker.scale.z = 0.5;
+
     for (const auto &lm:lm_list)
     {
-        std::string name = lm.name;
+        if (lm.name == "Elevator"){
+            color.r = 0.0;
+            color.g = 0.0;
+            color.b = 1.0;
+        }else if (lm.name == "Door"){
+            color.r = 0.90;
+            color.g = 0.71;
+            color.b = 0.13;
+        }else if (lm.name == "Vending machine"){
+            color.r = 1.0;
+            color.g = 0.0;
+            color.b = 0.0;
+        }else{
+            color.r = 0.5;
+            color.g = 0.5;
+            color.b = 0.5;
+        }
+        color.a = 1.0;
         for (const auto &pos:lm.pose)
         {
             point.x = pos.x;
             point.y = pos.y;
             point.z = pos.z;
             marker.points.push_back(point);
-            if (name == "Elevator"){
-                color.r = 0.0;
-                color.g = 0.0;
-                color.b = 1.0;
-            }else if (name == "Door"){
-                color.r = 0.90;
-                color.g = 0.71;
-                color.b = 0.13;
-            }else{
-                color.r = 1.0;
-                color.g = 0.0;
-                color.b = 0.0;
-            }
-            color.a = 1.0;
             marker.colors.push_back(color);
         }
     }
