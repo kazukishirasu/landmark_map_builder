@@ -13,7 +13,13 @@ struct Landmark
 {
     std::string name;
     std::vector<Pose> pose;
-    // Eigen::Matrix<double, Eigen::Dynamic, 2> pose;
+};
+
+struct Data_Points
+{
+    std::string name;
+    Eigen::MatrixX2d pose;
+    Eigen::VectorXd id;
 };
 
 #endif
