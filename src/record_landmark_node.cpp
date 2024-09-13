@@ -7,8 +7,8 @@ record_landmark::record_landmark() : pnh_("~")
 {
     ROS_INFO("Start record_landmark_node");
     load_yaml();
-    scan_sub_ = nh_.subscribe("/scan", 1, &record_landmark::cb_scan, this);
-    yolo_sub_ = nh_.subscribe("/detected_objects_in_image", 1, &record_landmark::cb_yolo, this);
+    scan_sub_ = nh_.subscribe("/scan", 30, &record_landmark::cb_scan, this);
+    yolo_sub_ = nh_.subscribe("/detected_objects_in_image", 30, &record_landmark::cb_yolo, this);
     save_srv_ = nh_.advertiseService("/save_landmark", &record_landmark::cb_save_srv, this);
     sphere_pub_ = nh_.advertise<visualization_msgs::Marker>("/visualization_sphere", 1);
     text_pub_ = nh_.advertise<visualization_msgs::Marker>("/visualization_text", 1);
@@ -33,11 +33,17 @@ void record_landmark::cb_yolo(const yolov5_pytorch_ros::BoundingBoxes& msg)
     {
         return;
     }
+
+    if (std::abs(msg.header.stamp.toSec() - cloud_.header.stamp.toSec()) < 0.01)
+    {
+        return;
+    }
+
     for (const auto &bb:msg.bounding_boxes)
     {
         auto itr = std::find(landmark_name_.begin(), landmark_name_.end(), bb.Class);
         const int index = std::distance(landmark_name_.begin(), itr);
-        if (bb.probability > 0.8 && itr != landmark_name_.end())
+        if (bb.probability > 0.8 && bb.xmax - bb.xmin > 30 && itr != landmark_name_.end())
         {
             get_pose(index, bb.xmax, bb.xmin);
         }
@@ -59,8 +65,8 @@ void record_landmark::load_yaml()
 {
     pnh_.param("landmark_name_file", landmark_name_file_, std::string(ros::package::getPath("landmark_map_builder") += "/landmark/name.yaml"));
     pnh_.param("landmark_record_file", landmark_record_file_, std::string(ros::package::getPath("landmark_map_builder") += "/landmark/landmark_ver0.yaml"));
-    ROS_INFO("Load name_file : \"%s\"", landmark_name_file_.c_str());
-    ROS_INFO("Load record_file : \"%s\"", landmark_record_file_.c_str());
+    ROS_INFO("Load name_file : %s", landmark_name_file_.c_str());
+    ROS_INFO("Load record_file : %s", landmark_record_file_.c_str());
 
     try
     {
