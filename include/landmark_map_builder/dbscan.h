@@ -12,14 +12,14 @@ namespace landmark_map_builder {
 class dbscan
 {
 public:
-    dbscan(std::string, std::string);
+    dbscan(std::string, std::string, std::string);
     ~dbscan();
     void load_yaml();
     void main();
     void clustering(Data_Points&);
     void save_yaml();
 private:
-    std::string landmark_file_, save_file_;
+    std::string param_file_, landmark_file_, save_file_;
     std::vector<Data_Points> dp_list_;
     float eps = 0.5;
     unsigned int minpts = 100;

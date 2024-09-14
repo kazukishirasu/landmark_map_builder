@@ -3,9 +3,10 @@
 namespace landmark_map_builder
 {
 
-dbscan::dbscan(std::string landmark_file, std::string save_file)
+dbscan::dbscan(std::string param_file, std::string landmark_file, std::string save_file)
 {
     std::cout << "Start DBSCAN clustering" << std::endl;
+    param_file_ = param_file;
     landmark_file_ = landmark_file;
     save_file_ = save_file;
     load_yaml();
@@ -19,6 +20,7 @@ void dbscan::load_yaml()
 {
     try
     {
+        std::cout << "Load from : " << landmark_file_.c_str() << std::endl;
         YAML::Node node = YAML::LoadFile(landmark_file_);
         YAML::Node landmark = node["landmark"];
         for (YAML::const_iterator it=landmark.begin(); it!=landmark.end(); ++it)
@@ -43,6 +45,16 @@ void dbscan::load_yaml()
     {
         std::cerr << e.what() << std::endl;
     }
+    try
+    {
+        YAML::Node node = YAML::LoadFile(param_file_);
+        eps = node["eps"].as<float>();
+        minpts = node["minpts"].as<unsigned int>();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 }
 
 void dbscan::main()
@@ -51,6 +63,7 @@ void dbscan::main()
     {
         clustering(dp);
     }
+    std::cout << "--------------------" << std::endl;
     save_yaml();
 }
 
@@ -148,6 +161,7 @@ void dbscan::save_yaml()
         out << YAML::EndMap;
         std::ofstream fout(save_file_);
         fout << out.c_str();
+        std::cout << "Save to : " << save_file_.c_str() << std::endl;
     }
     catch(const std::exception& e)
     {
@@ -158,7 +172,7 @@ void dbscan::save_yaml()
 
 int main(int argc, char *argv[])
 {
-    landmark_map_builder::dbscan dbscan(argv[1], argv[2]);
+    landmark_map_builder::dbscan dbscan(argv[1], argv[2], argv[3]);
     dbscan.main();
     return 0;
 }
