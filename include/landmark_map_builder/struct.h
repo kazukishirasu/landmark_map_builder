@@ -19,7 +19,7 @@ struct Data_Points
 {
     std::string name;
     Eigen::MatrixX2d pose;
-    Eigen::VectorXd id;
+    Eigen::VectorXd cluster;
 };
 
 #endif
