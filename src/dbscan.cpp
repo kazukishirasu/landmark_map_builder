@@ -110,7 +110,7 @@ void dbscan::save_yaml()
         Landmark lm;
         lm.name = dp.name;
         // クラスタの数だけ繰り返し
-        for (size_t i = 0; i < dp.cluster.maxCoeff(); i++)
+        for (size_t i = 1; i <= dp.cluster.maxCoeff(); i++)
         {
             int j = 0;
             int size = (dp.cluster.array() == i).count();
