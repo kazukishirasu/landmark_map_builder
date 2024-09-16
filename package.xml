@@ -16,6 +16,7 @@
   <depend>visualization_msgs</depend>
   <depend>laser_geometry</depend>
   <depend>yolov5_pytorch_ros</depend>
+  <depend>interactive_markers</depend>
 
   <buildtool_depend>catkin</buildtool_depend>
 

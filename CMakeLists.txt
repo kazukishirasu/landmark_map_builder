@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   laser_geometry
   yolov5_pytorch_ros
+  interactive_markers
 )
 
 catkin_package(

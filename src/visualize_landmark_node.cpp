@@ -1,50 +1,19 @@
-#include <ros/ros.h>
-#include <ros/package.h>
-#include <string>
-#include <vector>
-#include <yaml-cpp/yaml.h>
-#include <visualization_msgs/Marker.h>
-#include <geometry_msgs/Point.h>
-#include <std_msgs/ColorRGBA.h>
-#include "landmark_map_builder/struct.h"
+#include "landmark_map_builder/visualize_landmark_node.h"
 
-class visualize_landmark_node
-{
-private:
-    ros::NodeHandle nh_;
-    ros::NodeHandle pnh_;
-    ros::Publisher sphere_pub_;
-    ros::Publisher text_pub_;
-    std::string landmark_file_;
-    std::vector<Landmark> landmark_list_;
-public:
-    visualize_landmark_node();
-    ~visualize_landmark_node();
-    void loop();
-    void load_yaml();
-    void visualize_landmark(std::vector<Landmark>&);
-};
-
-visualize_landmark_node::visualize_landmark_node() : pnh_("~")
+namespace landmark_map_builder {
+visualize_landmark::visualize_landmark() : pnh_("~"), server_(new interactive_markers::InteractiveMarkerServer("visualize_landmark"))
 {
     ROS_INFO("Start visualize_landmark_node");
     load_yaml();
-    sphere_pub_ = nh_.advertise<visualization_msgs::Marker>("/visualization_sphere", 1);
-    text_pub_ = nh_.advertise<visualization_msgs::Marker>("/visualization_text", 1);
 }
 
-visualize_landmark_node::~visualize_landmark_node()
+visualize_landmark::~visualize_landmark()
 {
 }
 
-void visualize_landmark_node::loop()
+void visualize_landmark::load_yaml()
 {
-    visualize_landmark(landmark_list_);
-}
-
-void visualize_landmark_node::load_yaml()
-{
-    pnh_.param("landmark_file", landmark_file_, std::string(ros::package::getPath("landmark_map_builder") += "/landmark/landmark_ver0.yaml"));
+    pnh_.param("landmark_file", landmark_file_, std::string(ros::package::getPath("landmark_map_builder") += "/map/map_ver0.yaml"));
     ROS_INFO("Load %s", landmark_file_.c_str());
     try
     {
@@ -73,122 +42,95 @@ void visualize_landmark_node::load_yaml()
     }
 }
 
-void visualize_landmark_node::visualize_landmark(std::vector<Landmark>& lm_list)
+void visualize_landmark::main()
 {
-    //----------new----------
-    // visualization_msgs::Marker sphere, text;
-    // sphere.header.frame_id = "map";
-    // sphere.header.stamp = ros::Time::now();
-    // sphere.ns = "sphere";
-    // sphere.type = visualization_msgs::Marker::SPHERE;
-    // sphere.action = visualization_msgs::Marker::ADD;
-    // sphere.pose.orientation.x = 0.0;
-    // sphere.pose.orientation.y = 0.0;
-    // sphere.pose.orientation.z = 0.0;
-    // sphere.pose.orientation.w = 1.0;
-    // sphere.scale.x = 0.5;
-    // sphere.scale.y = 0.5;
-    // sphere.scale.z = 0.5;
-    // sphere.color.r = 0.0;
-    // sphere.color.g = 0.0;
-    // sphere.color.b = 1.0;
-    // sphere.color.a = 0.8;
+    for (const auto& lm:landmark_list_)
+    {
+        for (size_t id = 0; const auto& pos:lm.pose)
+        {
+            geometry_msgs::Point position = setPosition(pos);
+            server_->insert(makeInteractiveMarker(lm.name, position, id), boost::bind(&visualize_landmark::cb_feedback, this, _1));
+            id++;
+        }
+    }
+    server_->applyChanges();
+    ros::spin();
+}
 
-    // text.header.frame_id = "map";
-    // text.header.stamp = ros::Time::now();
-    // text.ns = "text";
-    // text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-    // text.action = visualization_msgs::Marker::ADD;
-    // text.pose.orientation.x = 0.0;
-    // text.pose.orientation.y = 0.0;
-    // text.pose.orientation.z = 0.0;
-    // text.pose.orientation.w = 1.0;
-    // text.scale.x = 0.5;
-    // text.scale.y = 0.5;
-    // text.scale.z = 0.5;
-    // text.color.r = 1.0;
-    // text.color.g = 1.0;
-    // text.color.b = 1.0;
-    // text.color.a = 1.0;
+geometry_msgs::Point visualize_landmark::setPosition(const Pose& pos)
+{
+    ROS_INFO("Set position");
+    geometry_msgs::Point position;
+    position.x = pos.x;
+    position.y = pos.y;
+    position.z = pos.z;
 
-    // for (size_t id = 0; const auto &lm:lm_list)
-    // {
-    //     text.text = lm.name;
-    //     for (const auto &pos:lm.pose)
-    //     {
-    //         sphere.pose.position.x = pos.x;
-    //         sphere.pose.position.y = pos.y;
-    //         sphere.pose.position.z = pos.z;
-    //         text.pose.position.x = pos.x;
-    //         text.pose.position.y = pos.y + 0.4;
-    //         text.pose.position.z = pos.z;
-    //         sphere.id = id;
-    //         text.id = id;
-    //         sphere_pub_.publish(sphere);
-    //         text_pub_.publish(text);
-    //         id++;
-    //     }
-    // }
+    return position;
+}
 
-    //----------old----------
+visualization_msgs::InteractiveMarker visualize_landmark::makeInteractiveMarker(const std::string& name, const geometry_msgs::Point& position, size_t id)
+{
+    ROS_INFO("Make InteractiveMarker");
+    visualization_msgs::InteractiveMarker int_marker;
+    int_marker.header.stamp = ros::Time::now();
+    int_marker.header.frame_id = "map";
+    int_marker.name = name + std::to_string(id);
+    int_marker.description = name + std::to_string(id);
+
+    visualization_msgs::InteractiveMarkerControl control;
+    control.always_visible = true;
+    control.orientation.w = 1;
+    control.orientation.x = 0;
+    control.orientation.y = 1;
+    control.orientation.z = 0;
+    control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
+    control.markers.push_back(makeSphereMarker(name, position));
+    int_marker.controls.push_back(control);
+
+    return int_marker;
+}
+
+visualization_msgs::Marker visualize_landmark::makeSphereMarker(const std::string& name, const geometry_msgs::Point& position)
+{
+    ROS_INFO("Make SphereMarker");
     visualization_msgs::Marker marker;
-    geometry_msgs::Point point;
-    std_msgs::ColorRGBA color;
-    marker.header.frame_id = "map";
-    marker.header.stamp = ros::Time::now();
-    marker.ns = "sphere";
-    marker.id = 0;
-    marker.type = visualization_msgs::Marker::SPHERE_LIST;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
+    marker.type = visualization_msgs::Marker::SPHERE;
     marker.scale.x = 0.5;
     marker.scale.y = 0.5;
     marker.scale.z = 0.5;
-
-    for (const auto &lm:lm_list)
-    {
-        if (lm.name == "Elevator"){
-            color.r = 0.0;
-            color.g = 0.0;
-            color.b = 1.0;
-        }else if (lm.name == "Door"){
-            color.r = 0.90;
-            color.g = 0.71;
-            color.b = 0.13;
-        }else if (lm.name == "Vending machine"){
-            color.r = 1.0;
-            color.g = 0.0;
-            color.b = 0.0;
-        }else{
-            color.r = 0.5;
-            color.g = 0.5;
-            color.b = 0.5;
-        }
-        color.a = 1.0;
-        for (const auto &pos:lm.pose)
-        {
-            point.x = pos.x;
-            point.y = pos.y;
-            point.z = pos.z;
-            marker.points.push_back(point);
-            marker.colors.push_back(color);
-        }
+    if (name == "Elevator"){
+        marker.color.r = 0.0;
+        marker.color.g = 0.0;
+        marker.color.b = 1.0;
+    }else if (name == "Door"){
+        marker.color.r = 0.90;
+        marker.color.g = 0.71;
+        marker.color.b = 0.13;
+    }else if (name == "Vending machine"){
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
+    }else{
+        marker.color.r = 0.5;
+        marker.color.g = 0.5;
+        marker.color.b = 0.5;
     }
-    sphere_pub_.publish(marker);
+    marker.color.a = 1.0;
+    marker.pose.position = position;
+    
+    return marker;
+}
+
+void visualize_landmark::cb_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+    ROS_INFO("Recived feedback");
+}
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "register_landmark_node");
-    visualize_landmark_node vl;
-    ros::Rate rate(0.5);
-    while (ros::ok())
-    {
-        vl.loop();
-        rate.sleep();
-    }
+    ros::init(argc, argv, "visualize_landmark_node");
+    landmark_map_builder::visualize_landmark vl;
+    vl.main();
     return 0;
 }
