@@ -5,10 +5,85 @@ visualize_landmark::visualize_landmark() : pnh_("~"), server_(new interactive_ma
 {
     ROS_INFO("Start visualize_landmark_node");
     load_yaml();
+    save_srv_ = nh_.advertiseService("/save_landmark", &visualize_landmark::cb_save_srv, this);
 }
 
 visualize_landmark::~visualize_landmark()
 {
+}
+
+void visualize_landmark::cb_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+    ROS_INFO("%s : x:%lf, y:%lf", feedback->marker_name.c_str(), feedback->pose.position.x, feedback->pose.position.y);
+    for (auto& lm:landmark_list_)
+    {
+        if (lm.name == feedback->marker_name)
+        {
+            lm.pose = feedback->pose;
+        }
+    }
+}
+
+void visualize_landmark::cb_add(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+    geometry_msgs::Point position = feedback->pose.position;
+    position.x = position.x + 0.5;
+    std::string marker_name;
+    std::string name = feedback->control_name;
+    int id = 0;
+    while (1)
+    {
+        marker_name = name + std::to_string(id);
+        bool find = false;
+        for (const auto& lm:landmark_list_)
+        {
+            if (lm.name == marker_name)
+            {
+                find = true;
+                break;
+            }
+        }
+        if (find)
+        {
+            id++;
+        }else if (!find)
+        {
+            break;
+        }
+    }
+    visualization_msgs::InteractiveMarker int_marker = makeInteractiveMarker(name, position, id);
+    landmark_list_.push_back(int_marker);
+    server_->insert(int_marker, boost::bind(&visualize_landmark::cb_feedback, this, _1));
+    menu_handler_.apply(*server_, marker_name);
+    server_->applyChanges();
+    ROS_INFO("add %s", marker_name.c_str());
+}
+
+void visualize_landmark::cb_delete(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+    for (auto itr = landmark_list_.begin(); itr != landmark_list_.end(); ++itr)
+    {
+        if (itr->name == feedback->marker_name)
+        {
+            landmark_list_.erase(itr);
+            break;
+        }
+    }
+    server_->erase(feedback->marker_name);
+    server_->applyChanges();
+    ROS_INFO("delete %s", feedback->marker_name.c_str());
+}
+
+bool visualize_landmark::cb_save_srv(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    if (save_yaml())
+    {
+        ROS_INFO("Landmark saved successfully");
+        return true;
+    }else{
+        ROS_WARN("Failed to save landmark");
+        return false;
+    }
 }
 
 void visualize_landmark::load_yaml()
@@ -21,19 +96,18 @@ void visualize_landmark::load_yaml()
         YAML::Node landmark = node["landmark"];
         for (YAML::const_iterator it=landmark.begin(); it!=landmark.end(); ++it)
         {
-            Landmark lm;
-            lm.name = it->first.as<std::string>();
-            YAML::Node config = landmark[lm.name];
+            std::string name = it->first.as<std::string>();
+            YAML::Node config = landmark[name];
+            size_t id = 0;
             for (YAML::const_iterator it=config.begin(); it!=config.end(); ++it)
             {
-                Pose pos;
-                std::string id = it->first.as<std::string>();
-                pos.x = it->second["pose"][0].as<float>();
-                pos.y = it->second["pose"][1].as<float>();
-                pos.z = it->second["pose"][2].as<float>();
-                lm.pose.push_back(pos);
+                geometry_msgs::Point position;
+                position.x = it->second["pose"][0].as<float>();
+                position.y = it->second["pose"][1].as<float>();
+                position.z = it->second["pose"][2].as<float>();
+                landmark_list_.push_back(makeInteractiveMarker(name, position, id));
+                id++;
             }
-            landmark_list_.push_back(lm);
         }
     }
     catch(const std::exception& e)
@@ -42,59 +116,109 @@ void visualize_landmark::load_yaml()
     }
 }
 
+bool visualize_landmark::save_yaml()
+{
+    try
+    {
+        std::vector<std::string> name_list;
+        for (const auto& lm:landmark_list_)
+        {
+            std::string name = lm.controls[0].markers[0].ns;
+            auto itr = std::find(name_list.begin(), name_list.end(), name);
+            if (itr == name_list.end())
+            {
+                name_list.push_back(name);
+            }
+        }
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        out << YAML::Key << "landmark";
+        out << YAML::BeginMap;
+        for (const auto& name:name_list)
+        {
+            out << YAML::Key << name;
+            out << YAML::BeginMap;
+            for (size_t id_n = 0; const auto& lm:landmark_list_)
+            {
+                if (name == lm.controls[0].markers[0].ns)
+                {
+                    geometry_msgs::Point pos = lm.pose.position;
+                    std::string id = "id";
+                    id += std::to_string(id_n);
+                    out << YAML::Key << id;
+                    out << YAML::BeginMap;
+                    out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << pos.x << pos.y << pos.z << YAML::EndSeq;
+                    out << YAML::Key << "enable" << YAML::Value << true;
+                    out << YAML::Key << "option" << YAML::Value << YAML::Null;
+                    out << YAML::EndMap;
+                    id_n++;
+                }
+            }
+            out << YAML::EndMap;
+        }
+        out << YAML::EndMap;
+        out << YAML::EndMap;
+        std::ofstream fout(landmark_file_);
+        fout << out.c_str();
+        return true;
+    }
+    catch(const std::exception& e)
+    {
+        ROS_WARN("%s", e.what());
+        return false;
+    }
+}
+
+void visualize_landmark::initMenu()
+{
+    menu_handler_.insert("add", boost::bind(&visualize_landmark::cb_add, this, _1));
+    menu_handler_.insert("delete", boost::bind(&visualize_landmark::cb_delete, this, _1));
+}
+
 void visualize_landmark::main()
 {
+    initMenu();
     for (const auto& lm:landmark_list_)
     {
-        for (size_t id = 0; const auto& pos:lm.pose)
-        {
-            geometry_msgs::Point position = setPosition(pos);
-            server_->insert(makeInteractiveMarker(lm.name, position, id), boost::bind(&visualize_landmark::cb_feedback, this, _1));
-            id++;
-        }
+        server_->insert(lm, boost::bind(&visualize_landmark::cb_feedback, this, _1));
+        menu_handler_.apply(*server_, lm.name);
     }
     server_->applyChanges();
     ros::spin();
 }
 
-geometry_msgs::Point visualize_landmark::setPosition(const Pose& pos)
-{
-    ROS_INFO("Set position");
-    geometry_msgs::Point position;
-    position.x = pos.x;
-    position.y = pos.y;
-    position.z = pos.z;
-
-    return position;
-}
-
 visualization_msgs::InteractiveMarker visualize_landmark::makeInteractiveMarker(const std::string& name, const geometry_msgs::Point& position, size_t id)
 {
-    ROS_INFO("Make InteractiveMarker");
     visualization_msgs::InteractiveMarker int_marker;
     int_marker.header.stamp = ros::Time::now();
     int_marker.header.frame_id = "map";
     int_marker.name = name + std::to_string(id);
-    int_marker.description = name + std::to_string(id);
+    int_marker.pose.position = position;
 
+    visualization_msgs::InteractiveMarkerControl marker_control, menu_control;
+    marker_control = makeMarkerControl(name, id);
+    menu_control = makeMenuControl();
+    int_marker.controls.push_back(marker_control);
+    int_marker.controls.push_back(menu_control);
+
+    return int_marker;
+}
+
+visualization_msgs::InteractiveMarkerControl visualize_landmark::makeMarkerControl(const std::string& name, size_t id)
+{
     visualization_msgs::InteractiveMarkerControl control;
+    control.name = name;
     control.always_visible = true;
     control.orientation.w = 1;
     control.orientation.x = 0;
     control.orientation.y = 1;
     control.orientation.z = 0;
     control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
-    control.markers.push_back(makeSphereMarker(name, position));
-    int_marker.controls.push_back(control);
-
-    return int_marker;
-}
-
-visualization_msgs::Marker visualize_landmark::makeSphereMarker(const std::string& name, const geometry_msgs::Point& position)
-{
-    ROS_INFO("Make SphereMarker");
+    
     visualization_msgs::Marker marker;
     marker.type = visualization_msgs::Marker::SPHERE;
+    marker.ns = name;
+    marker.id = id;
     marker.scale.x = 0.5;
     marker.scale.y = 0.5;
     marker.scale.z = 0.5;
@@ -116,14 +240,18 @@ visualization_msgs::Marker visualize_landmark::makeSphereMarker(const std::strin
         marker.color.b = 0.5;
     }
     marker.color.a = 1.0;
-    marker.pose.position = position;
-    
-    return marker;
+    control.markers.push_back(marker);
+
+    return control;
 }
 
-void visualize_landmark::cb_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+visualization_msgs::InteractiveMarkerControl visualize_landmark::makeMenuControl()
 {
-    ROS_INFO("Recived feedback");
+    visualization_msgs::InteractiveMarkerControl control;
+    control.always_visible = true;
+    visualization_msgs::InteractiveMarkerControl::BUTTON;
+
+    return control;
 }
 }
 
