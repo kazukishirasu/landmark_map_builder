@@ -34,10 +34,12 @@ private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
     ros::ServiceServer save_srv_;
+    bool debug_;
     std::string landmark_file_;
     std::vector<visualization_msgs::InteractiveMarker> landmark_list_;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
     interactive_markers::MenuHandler menu_handler_;
+    std::string first_line_;
 };
 
 }

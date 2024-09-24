@@ -4,6 +4,7 @@ namespace landmark_map_builder {
 visualize_landmark::visualize_landmark() : pnh_("~"), server_(new interactive_markers::InteractiveMarkerServer("visualize_landmark"))
 {
     ROS_INFO("Start visualize_landmark_node");
+    pnh_.param("debug", debug_, false);
     load_yaml();
     save_srv_ = nh_.advertiseService("/save_landmark", &visualize_landmark::cb_save_srv, this);
 }
@@ -92,6 +93,8 @@ void visualize_landmark::load_yaml()
     ROS_INFO("Load %s", landmark_file_.c_str());
     try
     {
+        std::ifstream file(landmark_file_);
+        std::getline(file, first_line_);
         YAML::Node node = YAML::LoadFile(landmark_file_);
         YAML::Node landmark = node["landmark"];
         for (YAML::const_iterator it=landmark.begin(); it!=landmark.end(); ++it)
@@ -159,6 +162,10 @@ bool visualize_landmark::save_yaml()
         out << YAML::EndMap;
         out << YAML::EndMap;
         std::ofstream fout(landmark_file_);
+        if (debug_)
+        {
+            fout << first_line_ << "\n";
+        }
         fout << out.c_str();
         return true;
     }

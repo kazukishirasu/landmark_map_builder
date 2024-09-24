@@ -43,7 +43,7 @@ void record_landmark::cb_yolo(const yolov5_pytorch_ros::BoundingBoxes& msg)
     {
         auto itr = std::find(landmark_name_.begin(), landmark_name_.end(), bb.Class);
         const int index = std::distance(landmark_name_.begin(), itr);
-        if (bb.probability > 0.8 && bb.xmax - bb.xmin > 30 && itr != landmark_name_.end())
+        if (bb.probability > prob_threshold_ && bb.xmax - bb.xmin > min_obj_size_ && itr != landmark_name_.end())
         {
             get_pose(index, bb.xmax, bb.xmin);
         }
@@ -137,6 +137,8 @@ bool record_landmark::save_yaml(std::vector<Landmark>& lm_list)
         out << YAML::EndMap;
         out << YAML::EndMap;
         std::ofstream fout(landmark_record_file_);
+        fout << "# prob_threshold = " + std::to_string(prob_threshold_);
+        fout << ", min_obj_size = " + std::to_string(min_obj_size_) + "\n";
         fout << out.c_str();
         return true;
     }

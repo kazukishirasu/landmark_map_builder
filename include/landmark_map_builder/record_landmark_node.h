@@ -49,6 +49,8 @@ private:
     std::string landmark_name_file_, landmark_record_file_;
     std::vector<std::string> landmark_name_;
     std::vector<Landmark> landmark_list_;
+    double prob_threshold_ = 0.6;
+    int min_obj_size_ = 30;
 };
 
 }

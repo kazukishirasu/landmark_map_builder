@@ -1,3 +1,4 @@
+# prob_threshold = 0.800000, min_obj_size = 30
 landmark:
   Door:
     id0:

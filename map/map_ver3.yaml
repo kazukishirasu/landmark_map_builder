@@ -1,0 +1,73 @@
+# eps = 1.500000, minpts = 100
+landmark:
+  Door:
+    id0:
+      pose: [-5.994036011367674, -1.100338957811657, 0]
+      enable: true
+      option: ~
+    id1:
+      pose: [6.072356698291549, 11.89715436247529, 0]
+      enable: true
+      option: ~
+    id2:
+      pose: [6.047551645321793, 17.930177988631, 0]
+      enable: true
+      option: ~
+    id3:
+      pose: [6.043407837549846, 20.29492266694007, 0]
+      enable: true
+      option: ~
+    id4:
+      pose: [6.051911668079655, 24.7616374576641, 0]
+      enable: true
+      option: ~
+    id5:
+      pose: [6.028245379374577, 31.17133293151856, 0]
+      enable: true
+      option: ~
+    id6:
+      pose: [6.036901301080054, 35.47337624266908, 0]
+      enable: true
+      option: ~
+    id7:
+      pose: [-6.066553188582598, 35.40935014196708, 0]
+      enable: true
+      option: ~
+    id8:
+      pose: [-6.042656166313668, 16.22596067225439, 0]
+      enable: true
+      option: ~
+    id9:
+      pose: [-6.017867271493121, 13.73900946465934, 0]
+      enable: true
+      option: ~
+  Elevator:
+    id0:
+      pose: [-2.150399276928872, -3.424822879133758, 0]
+      enable: true
+      option: ~
+    id1:
+      pose: [0.1095947268787993, -3.35921552053933, 0]
+      enable: true
+      option: ~
+    id2:
+      pose: [-1.506998038347898, 2.33393991637118, 0]
+      enable: true
+      option: ~
+    id3:
+      pose: [1.233912089488135, 2.441271794292162, 0]
+      enable: true
+      option: ~
+    id4:
+      pose: [2.281495940765279, -3.335408491576278, 0]
+      enable: true
+      option: ~
+    id5:
+      pose: [0.6155218710353718, 25.3815709204223, 0]
+      enable: true
+      option: ~
+  Vending machine:
+    id0:
+      pose: [7.238115666569144, -1.776348543339881, 0]
+      enable: true
+      option: ~

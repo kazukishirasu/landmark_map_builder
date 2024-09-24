@@ -1,4 +1,4 @@
-# eps: 1.5 minpts: 100
+# eps = 1.500000, minpts = 100
 landmark:
   Door:
     id0:

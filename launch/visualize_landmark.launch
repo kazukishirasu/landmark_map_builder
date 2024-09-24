@@ -1,12 +1,14 @@
 <launch>
 <arg name="map_file" default="$(find real_tsudanuma2-3_sim)/maps/real_tsudanuma2-3.yaml"/>
 <!-- <arg name="landmark_file" default="$(find landmark_map_builder)/landmark/landmark_ver2.yaml"/> -->
-<arg name="landmark_file" default="$(find landmark_map_builder)/map/map_ver2.yaml"/>
+<arg name="landmark_file" default="$(find landmark_map_builder)/map/map_ver4.yaml"/>
+<arg name="debug" default="true"/>
 
 <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
 
 <node pkg="landmark_map_builder" type="visualize_landmark_node" name="visualize_landmark_node" output="screen">
     <param name="landmark_file" value="$(arg landmark_file)"/>
+    <param name="debug" value="$(arg debug)"/>
 </node>
 
 <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find navigation)/rviz/visualize_landmark.rviz"/>

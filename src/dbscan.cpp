@@ -20,7 +20,7 @@ void dbscan::load_yaml()
 {
     try
     {
-        std::cout << "Load from : " << landmark_file_.c_str() << std::endl;
+        std::cout << "Load: " << landmark_file_.c_str() << std::endl;
         YAML::Node node = YAML::LoadFile(landmark_file_);
         YAML::Node landmark = node["landmark"];
         for (YAML::const_iterator it=landmark.begin(); it!=landmark.end(); ++it)
@@ -48,8 +48,8 @@ void dbscan::load_yaml()
     try
     {
         YAML::Node node = YAML::LoadFile(param_file_);
-        eps = node["eps"].as<float>();
-        minpts = node["minpts"].as<unsigned int>();
+        eps_ = node["eps"].as<float>();
+        minpts_ = node["minpts"].as<unsigned int>();
     }
     catch(const std::exception& e)
     {
@@ -59,6 +59,7 @@ void dbscan::load_yaml()
 
 void dbscan::main()
 {
+    std::cout << "eps = " << eps_ << ", minpts = " << minpts_ << std::endl;
     for (auto& dp:dp_list_)
     {
         clustering(dp);
@@ -83,13 +84,13 @@ void dbscan::clustering(Data_Points& dp)
             for (size_t j = 0; j < dp.pose.rows(); j++)
             {
                 double distance = (dp.pose.row(i) - dp.pose.row(j)).norm();
-                if (distance < eps)
+                if (distance < eps_)
                 {
                     tmp(j, 0) = cluster_number;
                 }
             }
             // クラスタの確定
-            if ((tmp.array() == cluster_number).count() >= minpts)
+            if ((tmp.array() == cluster_number).count() >= minpts_)
             {
                 dp.cluster = tmp;
                 cluster_number++;
@@ -160,6 +161,8 @@ void dbscan::save_yaml()
         out << YAML::EndMap;
         out << YAML::EndMap;
         std::ofstream fout(save_file_);
+        fout << "# eps = " + std::to_string(eps_);
+        fout << ", minpts = " + std::to_string(minpts_) + "\n";
         fout << out.c_str();
         std::cout << "Save to : " << save_file_.c_str() << std::endl;
     }

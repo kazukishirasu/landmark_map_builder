@@ -21,8 +21,8 @@ public:
 private:
     std::string param_file_, landmark_file_, save_file_;
     std::vector<Data_Points> dp_list_;
-    float eps = 0.5;
-    unsigned int minpts = 100;
+    float eps_ = 0.5;
+    unsigned int minpts_ = 100;
 };
 
 }
