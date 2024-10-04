@@ -52,6 +52,14 @@ void visualize_landmark::cb_add(const visualization_msgs::InteractiveMarkerFeedb
             break;
         }
     }
+    for (const auto& cov:cov_list_)
+    {
+        if (cov.first == feedback->marker_name)
+        {
+            cov_list_.push_back(std::make_pair(marker_name, cov.second));
+            break;
+        }
+    }
     visualization_msgs::InteractiveMarker int_marker = makeInteractiveMarker(name, position, id);
     landmark_list_.push_back(int_marker);
     server_->insert(int_marker, boost::bind(&visualize_landmark::cb_feedback, this, _1));
@@ -67,6 +75,14 @@ void visualize_landmark::cb_delete(const visualization_msgs::InteractiveMarkerFe
         if (itr->name == feedback->marker_name)
         {
             landmark_list_.erase(itr);
+            break;
+        }
+    }
+    for (auto itr = cov_list_.begin(); itr != cov_list_.end(); ++itr)
+    {
+        if (itr->first == feedback->marker_name)
+        {
+            cov_list_.erase(itr);
             break;
         }
     }
@@ -109,6 +125,14 @@ void visualize_landmark::load_yaml()
                 position.y = it->second["pose"][1].as<float>();
                 position.z = it->second["pose"][2].as<float>();
                 landmark_list_.push_back(makeInteractiveMarker(name, position, id));
+
+                std::string name_id = name + std::to_string(id);
+                Eigen::Matrix2d cov;
+                cov(0, 0) = it->second["cov"][0][0].as<double>();
+                cov(0, 1) = it->second["cov"][0][1].as<double>();
+                cov(1, 0) = it->second["cov"][1][0].as<double>();
+                cov(1, 1) = it->second["cov"][1][1].as<double>();
+                cov_list_.push_back(std::make_pair(name_id, cov));
                 id++;
             }
         }
@@ -151,6 +175,24 @@ bool visualize_landmark::save_yaml()
                     out << YAML::Key << id;
                     out << YAML::BeginMap;
                     out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << pos.x << pos.y << pos.z << YAML::EndSeq;
+                    out << YAML::Key << "cov" << YAML::BeginSeq;
+                    for (const auto& cov:cov_list_)
+                    {
+                        if (lm.name == cov.first)
+                        {
+                            for (size_t j = 0; j < cov.second.rows(); j++)
+                            {
+                                out << YAML::Flow << YAML::BeginSeq;
+                                for (size_t k = 0; k < cov.second.cols(); k++)
+                                {
+                                    out << cov.second(j, k);
+                                }
+                                out << YAML::EndSeq;
+                            }
+                            break;
+                        }
+                    }
+                    out << YAML::EndSeq;
                     out << YAML::Key << "enable" << YAML::Value << true;
                     out << YAML::Key << "option" << YAML::Value << YAML::Null;
                     out << YAML::EndMap;

@@ -1,5 +1,5 @@
 <launch>
-<arg name="landmark_name_file"   default="$(find landmark_map_builder)/landmark/name.yaml"/>
+<arg name="landmark_name_file"   default="$(find landmark_map_builder)/param/name.yaml"/>
 <arg name="landmark_record_file" default="$(find landmark_map_builder)/landmark/landmark_ver4.yaml"/>
 
 <node pkg="landmark_map_builder" type="record_landmark_node" name="record_landmark_node" output="screen">

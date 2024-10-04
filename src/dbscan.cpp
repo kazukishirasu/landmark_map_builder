@@ -125,10 +125,13 @@ void dbscan::save_yaml()
                 }
             }
             Eigen::RowVector2d mean = pose.colwise().mean();
-            Pose centroid;
-            centroid.x = mean[0];
-            centroid.y = mean[1];
+            Eigen::MatrixXd centered = pose.rowwise() - mean;
+            Eigen::Matrix2d cov = (centered.transpose() * centered) / double(pose.rows());
+            geometry_msgs::Pose centroid;
+            centroid.position.x = mean[0];
+            centroid.position.y = mean[1];
             lm.pose.push_back(centroid);
+            lm.cov.push_back(cov);
         }
         save_list.push_back(lm);
     }
@@ -143,17 +146,27 @@ void dbscan::save_yaml()
             std::string name = lm.name;
             out << YAML::Key << name;
             out << YAML::BeginMap;
-            for (size_t id_n = 0; const auto &pos:lm.pose)
+            for (size_t i = 0; i < lm.pose.size(); i++)
             {
                 std::string id = "id";
-                id += std::to_string(id_n);
+                id += std::to_string(i);
                 out << YAML::Key << id;
                 out << YAML::BeginMap;
-                out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << pos.x << pos.y << 0 << YAML::EndSeq;
+                out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << lm.pose[i].position.x << lm.pose[i].position.y << 0 << YAML::EndSeq;
+                out << YAML::Key << "cov" << YAML::BeginSeq;
+                for (size_t j = 0; j < lm.cov[i].rows(); j++)
+                {
+                    out << YAML::Flow << YAML::BeginSeq;
+                    for (size_t k = 0; k < lm.cov[i].cols(); k++)
+                    {
+                        out << lm.cov[i](j, k);
+                    }
+                    out << YAML::EndSeq;
+                }
+                out << YAML::EndSeq;
                 out << YAML::Key << "enable" << YAML::Value << true;
                 out << YAML::Key << "option" << YAML::Value << YAML::Null;
                 out << YAML::EndMap;
-                id_n++;
             }
             out << YAML::EndMap;
             index++;

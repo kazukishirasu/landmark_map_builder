@@ -2,17 +2,14 @@
 #define LANDMARK_STRUCT_H_
 
 #include <string>
+#include <geometry_msgs/Pose.h>
 #include <Eigen/Dense>
-
-struct Pose
-{
-    double x, y, z;
-};
 
 struct Landmark
 {
     std::string name;
-    std::vector<Pose> pose;
+    std::vector<geometry_msgs::Pose> pose;
+    std::vector<Eigen::Matrix2d> cov;
 };
 
 struct Data_Points

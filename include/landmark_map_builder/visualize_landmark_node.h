@@ -37,6 +37,7 @@ private:
     bool debug_;
     std::string landmark_file_;
     std::vector<visualization_msgs::InteractiveMarker> landmark_list_;
+    std::vector<std::pair<std::string, Eigen::Matrix2d>> cov_list_;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
     interactive_markers::MenuHandler menu_handler_;
     std::string first_line_;

@@ -96,14 +96,14 @@ void record_landmark::init_list()
 
 void record_landmark::get_pose(int index, int xmax, int xmin)
 {
-    Pose pos;
+    geometry_msgs::Pose pose;
     auto yaw = -((((xmin + xmax) / 2) - (w_img_/2)) * M_PI) / (w_img_/2);
     if (yaw < 0) {yaw += (M_PI * 2);}
     int i = (yaw * cloud_.points.size()) / (M_PI * 2);
-    pos.x = cloud_.points[i].x;
-    pos.y = cloud_.points[i].y;
-    pos.z = 0.0;
-    landmark_list_[index].pose.push_back(pos);
+    pose.position.x = cloud_.points[i].x;
+    pose.position.y = cloud_.points[i].y;
+    pose.position.z = 0.0;
+    landmark_list_[index].pose.push_back(pose);
 }
 
 bool record_landmark::save_yaml(std::vector<Landmark>& lm_list)
@@ -116,23 +116,26 @@ bool record_landmark::save_yaml(std::vector<Landmark>& lm_list)
         out << YAML::BeginMap;
         for (size_t index = 0; const auto &lm:lm_list)
         {
-            std::string name = lm.name;
-            out << YAML::Key << name;
-            out << YAML::BeginMap;
-            for (size_t id_n = 0; const auto &pos:lm.pose)
+            if (!lm.pose.empty())
             {
-                std::string id = "id";
-                id += std::to_string(id_n);
-                out << YAML::Key << id;
+                std::string name = lm.name;
+                out << YAML::Key << name;
                 out << YAML::BeginMap;
-                out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << pos.x << pos.y << pos.z << YAML::EndSeq;
-                out << YAML::Key << "enable" << YAML::Value << true;
-                out << YAML::Key << "option" << YAML::Value << YAML::Null;
+                for (size_t id_n = 0; const auto &pose:lm.pose)
+                {
+                    std::string id = "id";
+                    id += std::to_string(id_n);
+                    out << YAML::Key << id;
+                    out << YAML::BeginMap;
+                    out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << pose.position.x << pose.position.y << pose.position.z << YAML::EndSeq;
+                    out << YAML::Key << "enable" << YAML::Value << true;
+                    out << YAML::Key << "option" << YAML::Value << YAML::Null;
+                    out << YAML::EndMap;
+                    id_n++;
+                }
                 out << YAML::EndMap;
-                id_n++;
+                index++;
             }
-            out << YAML::EndMap;
-            index++;
         }
         out << YAML::EndMap;
         out << YAML::EndMap;
@@ -151,7 +154,7 @@ bool record_landmark::save_yaml(std::vector<Landmark>& lm_list)
 
 void record_landmark::visualize_landmark(std::vector<Landmark>& lm_list)
 {
-    //----------new----------
+    // ----------new----------
     // visualization_msgs::Marker sphere, text;
     // sphere.header.frame_id = "map";
     // sphere.header.stamp = ros::Time::now();
@@ -190,14 +193,14 @@ void record_landmark::visualize_landmark(std::vector<Landmark>& lm_list)
     // for (size_t id = 0; const auto &lm:lm_list)
     // {
     //     text.text = lm.name;
-    //     for (const auto &pos:lm.pose)
+    //     for (const auto &pose:lm.pose)
     //     {
-    //         sphere.pose.position.x = pos.x;
-    //         sphere.pose.position.y = pos.y;
-    //         sphere.pose.position.z = pos.z;
-    //         text.pose.position.x = pos.x;
-    //         text.pose.position.y = pos.y + 0.4;
-    //         text.pose.position.z = pos.z;
+    //         sphere.pose.position.x = pose.position.x;
+    //         sphere.pose.position.y = pose.position.y;
+    //         sphere.pose.position.z = pose.position.z;
+    //         text.pose.position.x = pose.position.x;
+    //         text.pose.position.y = pose.position.y + 0.4;
+    //         text.pose.position.z = pose.position.z;
     //         sphere.id = id;
     //         text.id = id;
     //         sphere_pub_.publish(sphere);
@@ -206,7 +209,7 @@ void record_landmark::visualize_landmark(std::vector<Landmark>& lm_list)
     //     }
     // }
 
-    //----------old----------
+    // ----------old----------
     visualization_msgs::Marker marker;
     geometry_msgs::Point point;
     std_msgs::ColorRGBA color;
@@ -244,11 +247,11 @@ void record_landmark::visualize_landmark(std::vector<Landmark>& lm_list)
             color.b = 0.5;
         }
         color.a = 1.0;
-        for (const auto &pos:lm.pose)
+        for (const auto &pose:lm.pose)
         {
-            point.x = pos.x;
-            point.y = pos.y;
-            point.z = pos.z;
+            point.x = pose.position.x;
+            point.y = pose.position.y;
+            point.z = pose.position.z;
             marker.points.push_back(point);
             marker.colors.push_back(color);
         }
