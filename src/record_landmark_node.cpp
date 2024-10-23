@@ -21,23 +21,17 @@ record_landmark::~record_landmark()
 void record_landmark::cb_scan(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
     if (!listener_.waitForTransform(msg->header.frame_id, "map", msg->header.stamp + ros::Duration().fromNSec(msg->ranges.size()*msg->time_increment), ros::Duration(1.0)))
-    {
         return;
-    }
     projector_.transformLaserScanToPointCloud("map", *msg, cloud_, listener_);
 }
 
 void record_landmark::cb_yolo(const yolov5_pytorch_ros::BoundingBoxes& msg)
 {
     if (cloud_.points.empty())
-    {
         return;
-    }
 
     if (std::abs(msg.header.stamp.toSec() - cloud_.header.stamp.toSec()) < 0.01)
-    {
         return;
-    }
 
     for (const auto &bb:msg.bounding_boxes)
     {
@@ -98,7 +92,8 @@ void record_landmark::get_pose(int index, int xmax, int xmin)
 {
     geometry_msgs::Pose pose;
     auto yaw = -((((xmin + xmax) / 2) - (w_img_/2)) * M_PI) / (w_img_/2);
-    if (yaw < 0) {yaw += (M_PI * 2);}
+    if (yaw < 0)
+        yaw += (M_PI * 2);
     int i = (yaw * cloud_.points.size()) / (M_PI * 2);
     pose.position.x = cloud_.points[i].x;
     pose.position.y = cloud_.points[i].y;
