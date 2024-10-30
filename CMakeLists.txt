@@ -6,7 +6,8 @@ set(CMAKE_CXX_FLAGS "-std=c++17 -O3 ${CMAKE_CXX_FLAGS}")
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
-  tf
+  tf2
+  tf2_ros
   std_srvs
   std_msgs
   sensor_msgs

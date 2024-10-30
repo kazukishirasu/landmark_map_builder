@@ -9,8 +9,10 @@
 #include <fstream>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
-#include <laser_geometry/laser_geometry.h>
-#include <tf/transform_listener.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2/LinearMath/Transform.h>
 #include <yolov5_pytorch_ros/BoundingBoxes.h>
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/Marker.h>
@@ -26,14 +28,16 @@ public:
     record_landmark();
     ~record_landmark();
     void cb_scan(const sensor_msgs::LaserScan::ConstPtr& msg);
-    void cb_yolo(const yolov5_pytorch_ros::BoundingBoxes& msg);
+    void cb_yolo(const yolov5_pytorch_ros::BoundingBoxes::ConstPtr& msg);
     bool cb_save_srv(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+    bool save_yaml(std::vector<Landmark>&);
     void load_yaml();
     void init_list();
-    void get_pose(int, int, int);
-    bool save_yaml(std::vector<Landmark>&);
-    void visualize_landmark(std::vector<Landmark>&);
     void loop();
+    bool get_transform(geometry_msgs::TransformStamped&, double&);
+    void get_yaw(double&, double&);
+    void get_pose(geometry_msgs::TransformStamped&, double&, const int&);
+    void visualize_landmark(std::vector<Landmark>&);
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
@@ -42,13 +46,14 @@ private:
     ros::ServiceServer save_srv_;
     ros::Publisher sphere_pub_;
     ros::Publisher text_pub_;
-    laser_geometry::LaserProjection projector_;
-    tf::TransformListener listener_;
-    sensor_msgs::PointCloud cloud_;
-    int w_img_ = 1280;
+    tf2_ros::Buffer tfbuffer_;
+    tf2_ros::TransformListener tflistener_;
     std::string landmark_name_file_, landmark_record_file_;
     std::vector<std::string> landmark_name_;
     std::vector<Landmark> landmark_list_;
+    sensor_msgs::LaserScan::ConstPtr scan_;
+    yolov5_pytorch_ros::BoundingBoxes::ConstPtr bb_;
+    int w_img_ = 1280;
     double prob_threshold_ = 0.6;
     int min_obj_size_ = 30;
 };
