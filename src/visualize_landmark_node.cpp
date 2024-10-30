@@ -16,10 +16,8 @@ visualize_landmark::~visualize_landmark()
 void visualize_landmark::cb_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
     ROS_INFO("%s : x:%lf, y:%lf", feedback->marker_name.c_str(), feedback->pose.position.x, feedback->pose.position.y);
-    for (auto& lm:landmark_list_)
-    {
-        if (lm.name == feedback->marker_name)
-        {
+    for (auto& lm:landmark_list_){
+        if (lm.name == feedback->marker_name){
             lm.pose = feedback->pose;
         }
     }
@@ -32,30 +30,23 @@ void visualize_landmark::cb_add(const visualization_msgs::InteractiveMarkerFeedb
     std::string marker_name;
     std::string name = feedback->control_name;
     int id = 0;
-    while (1)
-    {
+    while (1){
         marker_name = name + std::to_string(id);
         bool find = false;
-        for (const auto& lm:landmark_list_)
-        {
-            if (lm.name == marker_name)
-            {
+        for (const auto& lm:landmark_list_){
+            if (lm.name == marker_name){
                 find = true;
                 break;
             }
         }
-        if (find)
-        {
+        if (find){
             id++;
-        }else if (!find)
-        {
+        }else if (!find){
             break;
         }
     }
-    for (const auto& cov:cov_list_)
-    {
-        if (cov.first == feedback->marker_name)
-        {
+    for (const auto& cov:cov_list_){
+        if (cov.first == feedback->marker_name){
             cov_list_.push_back(std::make_pair(marker_name, cov.second));
             break;
         }
@@ -70,18 +61,14 @@ void visualize_landmark::cb_add(const visualization_msgs::InteractiveMarkerFeedb
 
 void visualize_landmark::cb_delete(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
-    for (auto itr = landmark_list_.begin(); itr != landmark_list_.end(); ++itr)
-    {
-        if (itr->name == feedback->marker_name)
-        {
+    for (auto itr = landmark_list_.begin(); itr != landmark_list_.end(); ++itr){
+        if (itr->name == feedback->marker_name){
             landmark_list_.erase(itr);
             break;
         }
     }
-    for (auto itr = cov_list_.begin(); itr != cov_list_.end(); ++itr)
-    {
-        if (itr->first == feedback->marker_name)
-        {
+    for (auto itr = cov_list_.begin(); itr != cov_list_.end(); ++itr){
+        if (itr->first == feedback->marker_name){
             cov_list_.erase(itr);
             break;
         }
@@ -93,8 +80,7 @@ void visualize_landmark::cb_delete(const visualization_msgs::InteractiveMarkerFe
 
 bool visualize_landmark::cb_save_srv(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
-    if (save_yaml())
-    {
+    if (save_yaml()){
         ROS_INFO("Landmark saved successfully");
         return true;
     }else{
@@ -107,19 +93,16 @@ void visualize_landmark::load_yaml()
 {
     pnh_.param("landmark_file", landmark_file_, std::string(ros::package::getPath("landmark_map_builder") += "/map/map_ver0.yaml"));
     ROS_INFO("Load %s", landmark_file_.c_str());
-    try
-    {
+    try{
         std::ifstream file(landmark_file_);
         std::getline(file, first_line_);
         YAML::Node node = YAML::LoadFile(landmark_file_);
         YAML::Node landmark = node["landmark"];
-        for (YAML::const_iterator it=landmark.begin(); it!=landmark.end(); ++it)
-        {
+        for (YAML::const_iterator it=landmark.begin(); it!=landmark.end(); ++it){
             std::string name = it->first.as<std::string>();
             YAML::Node config = landmark[name];
             size_t id = 0;
-            for (YAML::const_iterator it=config.begin(); it!=config.end(); ++it)
-            {
+            for (YAML::const_iterator it=config.begin(); it!=config.end(); ++it){
                 geometry_msgs::Point position;
                 position.x = it->second["pose"][0].as<float>();
                 position.y = it->second["pose"][1].as<float>();
@@ -137,23 +120,19 @@ void visualize_landmark::load_yaml()
             }
         }
     }
-    catch(const std::exception& e)
-    {
+    catch(const std::exception& e){
         ROS_WARN("%s", e.what());
     }
 }
 
 bool visualize_landmark::save_yaml()
 {
-    try
-    {
+    try{
         std::vector<std::string> name_list;
-        for (const auto& lm:landmark_list_)
-        {
+        for (const auto& lm:landmark_list_){
             std::string name = lm.controls[0].markers[0].ns;
             auto itr = std::find(name_list.begin(), name_list.end(), name);
-            if (itr == name_list.end())
-            {
+            if (itr == name_list.end()){
                 name_list.push_back(name);
             }
         }
@@ -161,14 +140,11 @@ bool visualize_landmark::save_yaml()
         out << YAML::BeginMap;
         out << YAML::Key << "landmark";
         out << YAML::BeginMap;
-        for (const auto& name:name_list)
-        {
+        for (const auto& name:name_list){
             out << YAML::Key << name;
             out << YAML::BeginMap;
-            for (size_t id_n = 0; const auto& lm:landmark_list_)
-            {
-                if (name == lm.controls[0].markers[0].ns)
-                {
+            for (size_t id_n = 0; const auto& lm:landmark_list_){
+                if (name == lm.controls[0].markers[0].ns){
                     geometry_msgs::Point pos = lm.pose.position;
                     std::string id = "id";
                     id += std::to_string(id_n);
@@ -176,15 +152,11 @@ bool visualize_landmark::save_yaml()
                     out << YAML::BeginMap;
                     out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << pos.x << pos.y << pos.z << YAML::EndSeq;
                     out << YAML::Key << "cov" << YAML::BeginSeq;
-                    for (const auto& cov:cov_list_)
-                    {
-                        if (lm.name == cov.first)
-                        {
-                            for (size_t j = 0; j < cov.second.rows(); j++)
-                            {
+                    for (const auto& cov:cov_list_){
+                        if (lm.name == cov.first){
+                            for (size_t j = 0; j < cov.second.rows(); j++){
                                 out << YAML::Flow << YAML::BeginSeq;
-                                for (size_t k = 0; k < cov.second.cols(); k++)
-                                {
+                                for (size_t k = 0; k < cov.second.cols(); k++){
                                     out << cov.second(j, k);
                                 }
                                 out << YAML::EndSeq;
@@ -204,15 +176,13 @@ bool visualize_landmark::save_yaml()
         out << YAML::EndMap;
         out << YAML::EndMap;
         std::ofstream fout(landmark_file_);
-        if (debug_)
-        {
+        if (debug_){
             fout << first_line_ << "\n";
         }
         fout << out.c_str();
         return true;
     }
-    catch(const std::exception& e)
-    {
+    catch(const std::exception& e){
         ROS_WARN("%s", e.what());
         return false;
     }
@@ -227,8 +197,7 @@ void visualize_landmark::initMenu()
 void visualize_landmark::main()
 {
     initMenu();
-    for (const auto& lm:landmark_list_)
-    {
+    for (const auto& lm:landmark_list_){
         server_->insert(lm, boost::bind(&visualize_landmark::cb_feedback, this, _1));
         menu_handler_.apply(*server_, lm.name);
     }

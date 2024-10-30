@@ -108,12 +108,12 @@ void record_landmark::init_list()
 
 void record_landmark::loop()
 {
-    if (!scan_) {
+    if (!scan_){
         ROS_WARN("Waiting for scan data...");
         return;
     }
 
-    if (!bb_) {
+    if (!bb_){
         ROS_WARN("Waiting for yolo data...");
         return;
     }

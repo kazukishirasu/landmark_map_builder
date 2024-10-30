@@ -18,21 +18,18 @@ dbscan::~dbscan()
 
 void dbscan::load_yaml()
 {
-    try
-    {
+    try{
         std::cout << "Load: " << landmark_file_.c_str() << std::endl;
         YAML::Node node = YAML::LoadFile(landmark_file_);
         YAML::Node landmark = node["landmark"];
-        for (YAML::const_iterator it=landmark.begin(); it!=landmark.end(); ++it)
-        {
+        for (YAML::const_iterator it=landmark.begin(); it!=landmark.end(); ++it){
             Data_Points dp;
             dp.name = it->first.as<std::string>();
             YAML::Node config = landmark[dp.name];
             dp.pose.resize(config.size(), 2);
             dp.cluster = Eigen::VectorXd::Constant(config.size(), 1, -1);
             int i = 0;
-            for (YAML::const_iterator it=config.begin(); it!=config.end(); ++it)
-            {
+            for (YAML::const_iterator it=config.begin(); it!=config.end(); ++it){
                 std::string id = it->first.as<std::string>();
                 dp.pose(i, 0) = it->second["pose"][0].as<float>();
                 dp.pose(i, 1) = it->second["pose"][1].as<float>();
@@ -41,18 +38,15 @@ void dbscan::load_yaml()
             dp_list_.push_back(dp);
         }
     }
-    catch(const std::exception& e)
-    {
+    catch(const std::exception& e){
         std::cerr << e.what() << std::endl;
     }
-    try
-    {
+    try{
         YAML::Node node = YAML::LoadFile(param_file_);
         eps_ = node["eps"].as<float>();
         minpts_ = node["minpts"].as<unsigned int>();
     }
-    catch(const std::exception& e)
-    {
+    catch(const std::exception& e){
         std::cerr << e.what() << std::endl;
     }
 }
@@ -60,8 +54,7 @@ void dbscan::load_yaml()
 void dbscan::main()
 {
     std::cout << "eps = " << eps_ << ", minpts = " << minpts_ << std::endl;
-    for (auto& dp:dp_list_)
-    {
+    for (auto& dp:dp_list_){
         clustering(dp);
     }
     std::cout << "--------------------" << std::endl;
@@ -72,30 +65,24 @@ void dbscan::clustering(Data_Points& dp)
 {
     std::cout << "--------------------" << std::endl << dp.name.c_str() << std::endl;
     unsigned int cluster_number = 1;
-    for (size_t i = 0; i < dp.pose.rows(); i++)
-    {
+    for (size_t i = 0; i < dp.pose.rows(); i++){
         // cluster = -1：クラスタ未割り当て
         // cluster = 0 ：ノイズ点
         // cluster = 1~：クラスタ番号
         Eigen::VectorXd tmp = dp.cluster;
-        if (dp.cluster(i, 0) == -1)
-        {
+        if (dp.cluster(i, 0) == -1){
             // 各点までの距離を計算
-            for (size_t j = 0; j < dp.pose.rows(); j++)
-            {
+            for (size_t j = 0; j < dp.pose.rows(); j++){
                 double distance = (dp.pose.row(i) - dp.pose.row(j)).norm();
-                if (distance < eps_)
-                {
+                if (distance < eps_){
                     tmp(j, 0) = cluster_number;
                 }
             }
             // クラスタの確定
-            if ((tmp.array() == cluster_number).count() >= minpts_)
-            {
+            if ((tmp.array() == cluster_number).count() >= minpts_){
                 dp.cluster = tmp;
                 cluster_number++;
-            }else
-            {
+            }else{
                 dp.cluster(i, 0) = 0;
             }
         }
@@ -106,20 +93,16 @@ void dbscan::clustering(Data_Points& dp)
 void dbscan::save_yaml()
 {   
     std::vector<Landmark> save_list;
-    for (const auto& dp:dp_list_)
-    {
+    for (const auto& dp:dp_list_){
         Landmark lm;
         lm.name = dp.name;
         // クラスタの数だけ繰り返し
-        for (size_t i = 1; i <= dp.cluster.maxCoeff(); i++)
-        {
+        for (size_t i = 1; i <= dp.cluster.maxCoeff(); i++){
             int j = 0;
             int size = (dp.cluster.array() == i).count();
             Eigen::MatrixX2d pose(size, 2);
-            for (size_t k = 0; k < dp.cluster.rows(); k++)
-            {
-                if (dp.cluster(k, 0) == i)
-                {
+            for (size_t k = 0; k < dp.cluster.rows(); k++){
+                if (dp.cluster(k, 0) == i){
                     pose.row(j) = dp.pose.row(k);
                     j++;
                 }
@@ -135,30 +118,25 @@ void dbscan::save_yaml()
         }
         save_list.push_back(lm);
     }
-    try
-    {
+    try{
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "landmark";
         out << YAML::BeginMap;
-        for (size_t index = 0; const auto &lm:save_list)
-        {
+        for (size_t index = 0; const auto &lm:save_list){
             std::string name = lm.name;
             out << YAML::Key << name;
             out << YAML::BeginMap;
-            for (size_t i = 0; i < lm.pose.size(); i++)
-            {
+            for (size_t i = 0; i < lm.pose.size(); i++){
                 std::string id = "id";
                 id += std::to_string(i);
                 out << YAML::Key << id;
                 out << YAML::BeginMap;
                 out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << lm.pose[i].position.x << lm.pose[i].position.y << 0 << YAML::EndSeq;
                 out << YAML::Key << "cov" << YAML::BeginSeq;
-                for (size_t j = 0; j < lm.cov[i].rows(); j++)
-                {
+                for (size_t j = 0; j < lm.cov[i].rows(); j++){
                     out << YAML::Flow << YAML::BeginSeq;
-                    for (size_t k = 0; k < lm.cov[i].cols(); k++)
-                    {
+                    for (size_t k = 0; k < lm.cov[i].cols(); k++){
                         out << lm.cov[i](j, k);
                     }
                     out << YAML::EndSeq;
@@ -179,8 +157,7 @@ void dbscan::save_yaml()
         fout << out.c_str();
         std::cout << "Save to : " << save_file_.c_str() << std::endl;
     }
-    catch(const std::exception& e)
-    {
+    catch(const std::exception& e){
         std::cerr << e.what() << std::endl;
     }
 }
