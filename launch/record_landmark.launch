@@ -1,9 +1,12 @@
 <launch>
-<arg name="landmark_name_file"   default="$(find landmark_map_builder)/param/name.yaml"/>
-<arg name="landmark_record_file" default="$(find landmark_map_builder)/landmark/landmark_ver1.yaml"/>
+<arg name="landmark_class_file"   default="$(find landmark_map_builder)/param/class.yaml"/>
+<arg name="landmark_file"   default="$(find landmark_map_builder)/landmark/landmark_ver5.yaml"/>
 
 <node pkg="landmark_map_builder" type="record_landmark_node" name="record_landmark_node" output="screen">
-    <param name="landmark_name_file" value="$(arg landmark_name_file)"/>
-    <param name="landmark_record_file" value="$(arg landmark_record_file)"/>
+    <param name="landmark_class_file" value="$(arg landmark_class_file)"/>
+</node>
+
+<node pkg="landmark_map_builder" type="visualize_landmark_node" name="visualize_landmark_node" output="screen">
+    <param name="landmark_file" value="$(arg landmark_file)"/>
 </node>
 </launch>

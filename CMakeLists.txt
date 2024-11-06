@@ -16,19 +16,33 @@ find_package(catkin REQUIRED COMPONENTS
   laser_geometry
   yolov5_pytorch_ros
   interactive_markers
+  message_generation
+)
+
+add_message_files(
+  FILES
+  Landmark.msg
+  Landmarks.msg
+  LandmarkPose.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs
 )
 
 catkin_package(
+  CATKIN_DEPENDS message_runtime
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS} )
 
-add_executable(record_landmark_node src/record_landmark_node.cpp)
+add_executable(calc_landmark_node src/calc_landmark_node.cpp)
 add_executable(dbscan src/dbscan.cpp)
-add_executable(visualize_landmark_node src/visualize_landmark_node.cpp)
+add_executable(edit_landmark_node src/edit_landmark_node.cpp)
 
 set_target_properties(dbscan PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/)
 
-target_link_libraries(record_landmark_node yaml-cpp ${catkin_LIBRARIES})
+target_link_libraries(calc_landmark_node yaml-cpp ${catkin_LIBRARIES})
 target_link_libraries(dbscan yaml-cpp ${catkin_LIBRARIES})
-target_link_libraries(visualize_landmark_node yaml-cpp ${catkin_LIBRARIES})
+target_link_libraries(edit_landmark_node yaml-cpp ${catkin_LIBRARIES})

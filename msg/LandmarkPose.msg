@@ -1,0 +1,2 @@
+geometry_msgs/PoseWithCovariance pose_cov
+int32 id

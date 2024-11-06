@@ -91,11 +91,11 @@ void dbscan::clustering(Data_Points& dp)
 }
 
 void dbscan::save_yaml()
-{   
-    std::vector<Landmark> save_list;
+{
+    Landmarks landmark_list;
     for (const auto& dp:dp_list_){
-        Landmark lm;
-        lm.name = dp.name;
+        Landmark landmark;
+        landmark.Class = dp.name;
         // クラスタの数だけ繰り返し
         for (size_t i = 1; i <= dp.cluster.maxCoeff(); i++){
             int j = 0;
@@ -110,54 +110,58 @@ void dbscan::save_yaml()
             Eigen::RowVector2d mean = pose.colwise().mean();
             Eigen::MatrixXd centered = pose.rowwise() - mean;
             Eigen::Matrix2d cov = (centered.transpose() * centered) / double(pose.rows());
-            geometry_msgs::Pose centroid;
-            centroid.position.x = mean[0];
-            centroid.position.y = mean[1];
-            lm.pose.push_back(centroid);
-            lm.cov.push_back(cov);
+            LandmarkPose p;
+            p.pose_cov.pose.position.x = mean[0];
+            p.pose_cov.pose.position.y = mean[1];
+            p.pose_cov.covariance[0] = cov(0, 0);
+            p.pose_cov.covariance[1] = cov(0, 1);
+            p.pose_cov.covariance[6] = cov(1, 0);
+            p.pose_cov.covariance[7] = cov(1, 1);
+            landmark.poses.push_back(p);
         }
-        save_list.push_back(lm);
+        landmark_list.landmarks.push_back(landmark);
     }
     try{
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "landmark";
         out << YAML::BeginMap;
-        for (size_t index = 0; const auto &lm:save_list){
-            std::string name = lm.name;
-            out << YAML::Key << name;
+        for (const auto& landmark:landmark_list.landmarks){
+            out << YAML::Key << landmark.Class;
             out << YAML::BeginMap;
-            for (size_t i = 0; i < lm.pose.size(); i++){
+            int id_n = 0;
+            for (const auto& p:landmark.poses){
                 std::string id = "id";
-                id += std::to_string(i);
+                id += std::to_string(id_n);
                 out << YAML::Key << id;
                 out << YAML::BeginMap;
-                out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq << lm.pose[i].position.x << lm.pose[i].position.y << 0 << YAML::EndSeq;
+                out << YAML::Key << "pose" << YAML::Value << YAML::Flow << YAML::BeginSeq
+                << p.pose_cov.pose.position.x
+                << p.pose_cov.pose.position.y
+                << p.pose_cov.pose.position.z << YAML::EndSeq;
                 out << YAML::Key << "cov" << YAML::BeginSeq;
-                for (size_t j = 0; j < lm.cov[i].rows(); j++){
-                    out << YAML::Flow << YAML::BeginSeq;
-                    for (size_t k = 0; k < lm.cov[i].cols(); k++){
-                        out << lm.cov[i](j, k);
-                    }
-                    out << YAML::EndSeq;
-                }
+                out << YAML::Flow << YAML::BeginSeq;
+                out << p.pose_cov.covariance[0] << p.pose_cov.covariance[1] << YAML::EndSeq;
+                out << YAML::Flow << YAML::BeginSeq;
+                out << p.pose_cov.covariance[6] << p.pose_cov.covariance[7] << YAML::EndSeq;
                 out << YAML::EndSeq;
                 out << YAML::Key << "enable" << YAML::Value << true;
                 out << YAML::Key << "option" << YAML::Value << YAML::Null;
                 out << YAML::EndMap;
+                id_n++;
             }
             out << YAML::EndMap;
-            index++;
         }
         out << YAML::EndMap;
         out << YAML::EndMap;
-        std::ofstream fout(save_file_);
+        std::ofstream fout(landmark_file_);
         fout << "# eps = " + std::to_string(eps_);
         fout << ", minpts = " + std::to_string(minpts_) + "\n";
         fout << out.c_str();
         std::cout << "Save to : " << save_file_.c_str() << std::endl;
     }
-    catch(const std::exception& e){
+    catch(const std::exception& e)
+    {
         std::cerr << e.what() << std::endl;
     }
 }

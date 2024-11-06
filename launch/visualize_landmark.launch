@@ -1,9 +1,0 @@
-<launch>
-<arg name="landmark_file" default="$(find landmark_map_builder)/map/map_ver1.yaml"/>
-<arg name="debug" default="true"/>
-
-<node pkg="landmark_map_builder" type="visualize_landmark_node" name="visualize_landmark_node" output="screen">
-    <param name="landmark_file" value="$(arg landmark_file)"/>
-    <param name="debug" value="$(arg debug)"/>
-</node>
-</launch>

@@ -1,1 +1,1 @@
-./build/dbscan param/dbscan.yaml landmark/landmark_ver4.yaml map/map_ver4.yaml
+./build/dbscan param/dbscan.yaml landmark/landmark_ver5.yaml map/map_ver5.yaml

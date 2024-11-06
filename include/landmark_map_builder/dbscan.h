@@ -5,13 +5,19 @@
 #include <string>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
-#include "landmark_map_builder/struct.h"
+#include <Eigen/Dense>
+#include "landmark_map_builder/Landmarks.h"
 
 namespace landmark_map_builder {
 
 class dbscan
 {
 public:
+    struct Data_Points{
+        std::string name;
+        Eigen::MatrixX2d pose;
+        Eigen::VectorXd cluster;
+    };
     dbscan(std::string, std::string, std::string);
     ~dbscan();
     void load_yaml();
