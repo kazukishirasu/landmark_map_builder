@@ -2,7 +2,7 @@
 <arg name="landmark_class_file"   default="$(find landmark_map_builder)/param/class.yaml"/>
 <arg name="landmark_file"   default="$(find landmark_map_builder)/landmark/landmark_ver5.yaml"/>
 
-<node pkg="landmark_map_builder" type="record_landmark_node" name="record_landmark_node" output="screen">
+<node pkg="landmark_map_builder" type="calc_landmark_node" name="calc_landmark_node" output="screen">
     <param name="landmark_class_file" value="$(arg landmark_class_file)"/>
 </node>
 
