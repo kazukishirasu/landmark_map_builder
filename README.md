@@ -8,22 +8,25 @@ source ~/.bashrc
 ```
 ## 使い方
 ### ランドマークのデータ収集
-#### [landmark_map_builder/param/name.yaml](https://github.com/kazukishirasu/landmark_map_builder/blob/master/param/name.yaml)
+#### [landmark_map_builder/param/name.yaml](https://github.com/kazukishirasu/landmark_map_builder/blob/master/param/class.yaml)
 ```yaml
-name:
+class:
   # 保存したいランドマークのクラス名
   [Door, Elevator, Vending machine]
 ```
 #### [landmark_map_builder/launch/record_landmark.launch](https://github.com/kazukishirasu/landmark_map_builder/blob/master/launch/record_landmark.launch)
 ```xml
 <launch>
-<arg name="landmark_name_file"   default="$(find landmark_map_builder)/param/name.yaml"/>
-<!-- ランドマーク情報を保存するファイル -->
-<arg name="landmark_record_file" default="$(find landmark_map_builder)/landmark/landmark_ver1.yaml"/>
+<arg name="landmark_class_file"   default="$(find landmark_map_builder)/param/class.yaml"/>
+<!-- ランドマークの保存先ファイル -->
+<arg name="landmark_file"   default="$(find landmark_map_builder)/landmark/landmark_ver1.yaml"/>
 
-<node pkg="landmark_map_builder" type="record_landmark_node" name="record_landmark_node" output="screen">
-    <param name="landmark_name_file" value="$(arg landmark_name_file)"/>
-    <param name="landmark_record_file" value="$(arg landmark_record_file)"/>
+<node pkg="landmark_map_builder" type="calc_landmark_node" name="calc_landmark_node" output="screen">
+    <param name="landmark_class_file" value="$(arg landmark_class_file)"/>
+</node>
+
+<node pkg="landmark_map_builder" type="visualize_landmark_node" name="visualize_landmark_node" output="screen">
+    <param name="landmark_file" value="$(arg landmark_file)"/>
 </node>
 </launch>
 ```
@@ -49,13 +52,13 @@ roscd landmark_map_builder
 ```
 ### ランドマークの表示、編集
 rviz上でランドマークの移動、追加、削除が可能
-#### [landmark_map_builder/launch/visualize_landmark.launch](https://github.com/kazukishirasu/landmark_map_builder/blob/master/launch/visualize_landmark.launch)
+#### [landmark_map_builder/launch/edit_landmark.launch](https://github.com/kazukishirasu/landmark_map_builder/blob/master/launch/edit_landmark.launch)
 ```xml
 <launch>
 <!-- ランドマークファイル -->
 <arg name="landmark_file" default="$(find landmark_map_builder)/map/map_ver1.yaml"/>
 
-<node pkg="landmark_map_builder" type="visualize_landmark_node" name="visualize_landmark_node" output="screen">
+<node pkg="landmark_map_builder" type="edit_landmark_node" name="edit_landmark_node" output="screen">
     <param name="landmark_file" value="$(arg landmark_file)"/>
 </node>
 </launch>
