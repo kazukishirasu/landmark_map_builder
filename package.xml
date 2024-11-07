@@ -4,11 +4,13 @@
   <version>0.0.0</version>
   <description>The landmark_map_builder package</description>
 
-  <maintainer email="kazuki@todo.todo">kazuki</maintainer>
+  <maintainer email="s19c1057fa@s.chibakoudai.jp">kazuki</maintainer>
   <license>TODO</license>
 
   <depend>roscpp</depend>
-  <depend>tf</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
   <depend>std_srvs</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
