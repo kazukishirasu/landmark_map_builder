@@ -154,7 +154,7 @@ void dbscan::save_yaml()
         }
         out << YAML::EndMap;
         out << YAML::EndMap;
-        std::ofstream fout(landmark_file_);
+        std::ofstream fout(save_file_);
         fout << "# eps = " + std::to_string(eps_);
         fout << ", minpts = " + std::to_string(minpts_) + "\n";
         fout << out.c_str();

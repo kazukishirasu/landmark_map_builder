@@ -28,8 +28,8 @@ public:
     void load_yaml();
     void loop();
     bool get_transform(geometry_msgs::TransformStamped&, double&);
+    void get_pose(geometry_msgs::TransformStamped&, double&, double&, const int&);
     void get_yaw(double&, double&);
-    void get_pose(geometry_msgs::TransformStamped&, double&, const int&);
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
@@ -42,7 +42,7 @@ private:
     tf2_ros::TransformListener tflistener_;
     std::string landmark_class_file_;
     Landmarks landmark_list_;
-    int w_img_ = 1280;
+    int img_width_;
     double prob_threshold_ = 0.6;
     int min_obj_size_ = 30;
 };

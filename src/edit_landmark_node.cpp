@@ -253,6 +253,10 @@ visualization_msgs::InteractiveMarkerControl edit_landmark::makeMarkerControl(co
         marker.color.r = 1.0;
         marker.color.g = 0.0;
         marker.color.b = 0.0;
+    }else if (name == "Fire extinguisher"){
+        marker.color.r = 0.0;
+        marker.color.g = 1.0;
+        marker.color.b = 0.0;
     }else{
         marker.color.r = 0.5;
         marker.color.g = 0.5;

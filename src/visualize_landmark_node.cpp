@@ -201,6 +201,10 @@ void visualize_landmark::visualization()
             color.r = 1.0;
             color.g = 0.0;
             color.b = 0.0;
+        }else if (landmark.Class == "Fire extinguisher"){
+            color.r = 0.0;
+            color.g = 1.0;
+            color.b = 0.0;
         }else{
             color.r = 0.5;
             color.g = 0.5;
@@ -223,7 +227,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "visualize_landmark_node");
     landmark_map_builder::visualize_landmark vl;
-    ros::Rate rate(10.0);
+    ros::Rate rate(30.0);
     while (ros::ok()){
         ros::spinOnce();
         vl.visualization();
