@@ -7,6 +7,7 @@
 #include <vector>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
+#include <cmath>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
 #include <tf2_ros/transform_listener.h>
@@ -43,8 +44,9 @@ private:
     std::string landmark_class_file_;
     Landmarks landmark_list_;
     int img_width_;
-    double prob_threshold_ = 0.6;
-    int min_obj_size_ = 30;
+    double cutoff_min_ang_, cutoff_max_ang_;
+    double prob_threshold_ = 0.8;
+    int min_obj_size_ = 0;
 };
 
 }

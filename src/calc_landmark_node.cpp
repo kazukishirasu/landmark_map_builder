@@ -7,6 +7,8 @@ calc_landmark::calc_landmark() : pnh_("~"), tflistener_(tfbuffer_)
 {
     ROS_INFO("Start calc_landmark_node");
     pnh_.param("image_width", img_width_, 1280);
+    pnh_.param("cutoff_min_angle", cutoff_min_ang_, 0.0);
+    pnh_.param("cutoff_max_angle", cutoff_max_ang_, 0.0);
     load_yaml();
     scan_sub_ = nh_.subscribe("/scan", 1, &calc_landmark::cb_scan, this);
     yolo_sub_ = nh_.subscribe("/detected_objects_in_image", 1, &calc_landmark::cb_yolo, this);
@@ -73,7 +75,7 @@ void calc_landmark::loop()
             index++;
         }
         if (b.probability > prob_threshold_ && (b.xmax - b.xmin) > min_obj_size_ && find){
-            std::cout << b.Class;
+            std::cout << b.Class << "=>";
             double yaw = -((((b.xmin + b.xmax) / 2) - (img_width_ / 2)) * M_PI) / (img_width_ / 2);
             get_pose(transformstamped, yaw, lidar_yaw, index);
         }
@@ -113,7 +115,12 @@ void calc_landmark::get_pose(geometry_msgs::TransformStamped& transformstamped, 
     get_yaw(yaw, lidar_yaw);
     geometry_msgs::PointStamped point_in, point_out;
     int i = (yaw * scan_->ranges.size()) / (M_PI * 2);
-    double a = (scan_->angle_increment * i) + std::abs(scan_->angle_min) + lidar_yaw;
+    double a = (scan_->angle_increment * i) - std::abs(scan_->angle_min);
+    if (a < cutoff_min_ang_ || a > cutoff_max_ang_){
+        std::cout << "cutoff" << std::endl;
+        return;
+    }
+    a -= lidar_yaw;
     point_in.point.x = scan_->ranges[i] * std::cos(a);
     point_in.point.y = scan_->ranges[i] * std::sin(a);
     point_in.point.z = 0;
@@ -123,7 +130,9 @@ void calc_landmark::get_pose(geometry_msgs::TransformStamped& transformstamped, 
         p.pose_cov.pose.position.x = point_out.point.x;
         p.pose_cov.pose.position.y = point_out.point.y;
         p.pose_cov.pose.position.z = 0.0;
-        std::cout << " x:" << p.pose_cov.pose.position.x << " y:" << p.pose_cov.pose.position.y << std::endl;
+        if (std::isnan(p.pose_cov.pose.position.x) || std::isnan(p.pose_cov.pose.position.y) || std::isinf(p.pose_cov.pose.position.x) || std::isinf(p.pose_cov.pose.position.y))
+            return;
+        std::cout << "x:" << p.pose_cov.pose.position.x << " y:" << p.pose_cov.pose.position.y << std::endl;
         landmark_list_.landmarks[index].poses.push_back(p);
     }
     catch(const tf2::TransformException &e){
