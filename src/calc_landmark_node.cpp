@@ -126,7 +126,6 @@ void calc_landmark::get_pose(geometry_msgs::TransformStamped& transformstamped, 
             std::cout << "cutoff" << std::endl;
             return;
         }
-        a -= lidar_yaw;
         point_in.point.x = scan_->ranges[scan_index] * std::cos(a);
         point_in.point.y = scan_->ranges[scan_index] * std::sin(a);
         point_in.point.z = 0.0;
