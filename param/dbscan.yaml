@@ -1,2 +1,7 @@
-eps: 1.5
-minpts: 100
+# sim
+eps: 2.0
+minpts: 40
+
+# real
+# eps: 2.0
+# minpts: 70

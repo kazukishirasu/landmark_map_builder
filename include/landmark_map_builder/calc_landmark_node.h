@@ -29,7 +29,7 @@ public:
     void load_yaml();
     void loop();
     bool get_transform(geometry_msgs::TransformStamped&, double&);
-    void get_pose(geometry_msgs::TransformStamped&, double&, double&, const int&);
+    void get_pose(geometry_msgs::TransformStamped&, std::array<int, 2>&, double&, const int&);
     void get_yaw(double&, double&);
 private:
     ros::NodeHandle nh_;
@@ -45,8 +45,8 @@ private:
     Landmarks landmark_list_;
     int img_width_;
     double cutoff_min_ang_, cutoff_max_ang_;
-    double prob_threshold_ = 0.8;
-    int min_obj_size_ = 0;
+    double prob_threshold_;
+    int min_obj_size_;
 };
 
 }

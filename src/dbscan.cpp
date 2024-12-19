@@ -97,29 +97,31 @@ void dbscan::save_yaml()
         Landmark landmark;
         landmark.Class = dp.name;
         // クラスタの数だけ繰り返し
-        for (size_t i = 1; i <= dp.cluster.maxCoeff(); i++){
-            int j = 0;
-            int size = (dp.cluster.array() == i).count();
-            Eigen::MatrixX2d pose(size, 2);
-            for (size_t k = 0; k < dp.cluster.rows(); k++){
-                if (dp.cluster(k, 0) == i){
-                    pose.row(j) = dp.pose.row(k);
-                    j++;
+        if (dp.cluster.size() != 0){
+            for (size_t i = 1; i <= dp.cluster.maxCoeff(); i++){
+                int j = 0;
+                int size = (dp.cluster.array() == i).count();
+                Eigen::MatrixX2d pose(size, 2);
+                for (size_t k = 0; k < dp.cluster.rows(); k++){
+                    if (dp.cluster(k, 0) == i){
+                        pose.row(j) = dp.pose.row(k);
+                        j++;
+                    }
                 }
+                Eigen::RowVector2d mean = pose.colwise().mean();
+                Eigen::MatrixXd centered = pose.rowwise() - mean;
+                Eigen::Matrix2d cov = (centered.transpose() * centered) / double(pose.rows());
+                LandmarkPose p;
+                p.pose_cov.pose.position.x = mean[0];
+                p.pose_cov.pose.position.y = mean[1];
+                p.pose_cov.covariance[0] = cov(0, 0);
+                p.pose_cov.covariance[1] = cov(0, 1);
+                p.pose_cov.covariance[6] = cov(1, 0);
+                p.pose_cov.covariance[7] = cov(1, 1);
+                landmark.poses.push_back(p);
             }
-            Eigen::RowVector2d mean = pose.colwise().mean();
-            Eigen::MatrixXd centered = pose.rowwise() - mean;
-            Eigen::Matrix2d cov = (centered.transpose() * centered) / double(pose.rows());
-            LandmarkPose p;
-            p.pose_cov.pose.position.x = mean[0];
-            p.pose_cov.pose.position.y = mean[1];
-            p.pose_cov.covariance[0] = cov(0, 0);
-            p.pose_cov.covariance[1] = cov(0, 1);
-            p.pose_cov.covariance[6] = cov(1, 0);
-            p.pose_cov.covariance[7] = cov(1, 1);
-            landmark.poses.push_back(p);
+            landmark_list.landmarks.push_back(landmark);
         }
-        landmark_list.landmarks.push_back(landmark);
     }
     try{
         YAML::Emitter out;

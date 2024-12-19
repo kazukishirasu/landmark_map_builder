@@ -1,1 +1,1 @@
-./build/dbscan param/dbscan.yaml landmark/real_2024_1218.yaml map/real_2024_1218.yaml
+./build/dbscan param/dbscan.yaml landmark/sim_2024_1219.yaml map/sim_2024_1219.yaml

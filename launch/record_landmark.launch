@@ -5,6 +5,8 @@
 <node pkg="landmark_map_builder" type="calc_landmark_node" name="calc_landmark_node" output="screen">
     <param name="landmark_class_file"   value="$(arg landmark_class_file)"/>
     <param name="image_width"           value="1280"/>
+    <param name="prob_threshold"        value="0.9"/>
+    <param name="min_obj_size"          value="20"/>
     <param name="cutoff_min_angle"      value="-2.5"/>
     <param name="cutoff_max_angle"      value="2.5"/>
     <remap from="/scan"                 to="/rfans/surestar_scan"/>

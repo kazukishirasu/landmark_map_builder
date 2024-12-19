@@ -7,8 +7,10 @@ calc_landmark::calc_landmark() : pnh_("~"), tflistener_(tfbuffer_)
 {
     ROS_INFO("Start calc_landmark_node");
     pnh_.param("image_width", img_width_, 1280);
-    pnh_.param("cutoff_min_angle", cutoff_min_ang_, 0.0);
-    pnh_.param("cutoff_max_angle", cutoff_max_ang_, 0.0);
+    pnh_.param("cutoff_min_angle", cutoff_min_ang_, -M_PI);
+    pnh_.param("cutoff_max_angle", cutoff_max_ang_, M_PI);
+    pnh_.param("prob_threshold", prob_threshold_, 0.8);
+    pnh_.param("min_obj_size", min_obj_size_, 40);
     load_yaml();
     scan_sub_ = nh_.subscribe("/scan", 1, &calc_landmark::cb_scan, this);
     yolo_sub_ = nh_.subscribe("/detected_objects_in_image", 1, &calc_landmark::cb_yolo, this);
@@ -76,8 +78,8 @@ void calc_landmark::loop()
         }
         if (b.probability > prob_threshold_ && (b.xmax - b.xmin) > min_obj_size_ && find){
             std::cout << b.Class << "=>";
-            double yaw = -((((b.xmin + b.xmax) / 2) - (img_width_ / 2)) * M_PI) / (img_width_ / 2);
-            get_pose(transformstamped, yaw, lidar_yaw, index);
+            std::array<int, 2> x_array = {int(b.xmin), int(b.xmax)};
+            get_pose(transformstamped, x_array, lidar_yaw, index);
         }
     }
     landmark_pub_.publish(landmark_list_);
@@ -110,35 +112,44 @@ bool calc_landmark::get_transform(geometry_msgs::TransformStamped& transformstam
     return true;
 }
 
-void calc_landmark::get_pose(geometry_msgs::TransformStamped& transformstamped, double& yaw, double& lidar_yaw, const int& index)
+void calc_landmark::get_pose(geometry_msgs::TransformStamped& transformstamped, std::array<int, 2>& x_array, double& lidar_yaw, const int& index)
 {
-    get_yaw(yaw, lidar_yaw);
-    geometry_msgs::PointStamped point_in, point_out;
-    int i = (yaw * scan_->ranges.size()) / (M_PI * 2);
-    double a = (scan_->angle_increment * i) - std::abs(scan_->angle_min);
-    if (a < cutoff_min_ang_ || a > cutoff_max_ang_){
-        std::cout << "cutoff" << std::endl;
-        return;
-    }
-    a -= lidar_yaw;
-    point_in.point.x = scan_->ranges[i] * std::cos(a);
-    point_in.point.y = scan_->ranges[i] * std::sin(a);
-    point_in.point.z = 0;
-    try{
-        tf2::doTransform(point_in, point_out, transformstamped);
-        LandmarkPose p;
-        p.pose_cov.pose.position.x = point_out.point.x;
-        p.pose_cov.pose.position.y = point_out.point.y;
-        p.pose_cov.pose.position.z = 0.0;
-        if (std::isnan(p.pose_cov.pose.position.x) || std::isnan(p.pose_cov.pose.position.y) || std::isinf(p.pose_cov.pose.position.x) || std::isinf(p.pose_cov.pose.position.y))
+    std::array<geometry_msgs::PointStamped, 2> points;
+    int i = 0;
+    for (const auto& x : x_array){
+        double yaw = -((x - (img_width_ / 2)) * M_PI) / (img_width_ / 2);
+        get_yaw(yaw, lidar_yaw);
+        geometry_msgs::PointStamped point_in, point_out;
+        int scan_index = (yaw * scan_->ranges.size()) / (M_PI * 2);
+        double a = (scan_->angle_increment * scan_index) - std::abs(scan_->angle_min);
+        if (a < cutoff_min_ang_ || a > cutoff_max_ang_){
+            std::cout << "cutoff" << std::endl;
             return;
-        std::cout << "x:" << p.pose_cov.pose.position.x << " y:" << p.pose_cov.pose.position.y << std::endl;
-        landmark_list_.landmarks[index].poses.push_back(p);
+        }
+        a -= lidar_yaw;
+        point_in.point.x = scan_->ranges[scan_index] * std::cos(a);
+        point_in.point.y = scan_->ranges[scan_index] * std::sin(a);
+        point_in.point.z = 0.0;
+        try{
+            tf2::doTransform(point_in, point_out, transformstamped);
+            if (std::isnan(point_out.point.x) || std::isnan(point_out.point.y) || std::isinf(point_out.point.x) || std::isinf(point_out.point.y)){
+                std::cout << "the coordinate is nan or inf" << std::endl;
+                return;
+            }
+            points[i++] = point_out;
+        }
+        catch(const tf2::TransformException &e){
+            ROS_WARN("%s", e.what());
+            return;
+        }
     }
-    catch(const tf2::TransformException &e){
-        ROS_WARN("%s", e.what());
-        return;
-    }
+    LandmarkPose p;
+    p.pose_cov.pose.position.x = (points[0].point.x + points[1].point.x) / 2;
+    p.pose_cov.pose.position.y = (points[0].point.y + points[1].point.y) / 2;
+    p.pose_cov.pose.position.z = 0.0;
+    std::cout << "x:" << p.pose_cov.pose.position.x << " y:" << p.pose_cov.pose.position.y << std::endl;
+    landmark_list_.landmarks[index].poses.push_back(p);
+    return;
 }
 
 void calc_landmark::get_yaw(double& yaw, double& lidar_yaw)
