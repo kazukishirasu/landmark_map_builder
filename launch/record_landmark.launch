@@ -1,14 +1,19 @@
 <launch>
 <arg name="landmark_class_file"     default="$(find landmark_map_builder)/param/class.yaml"/>
 <arg name="landmark_file"           default="$(find landmark_map_builder)/landmark/landmark_ver0.yaml"/>
+<arg name="image_width"             default="1280"/>
+<arg name="prob_threshold"          default="0.9"/>
+<arg name="min_obj_size"            default="20"/>
+<arg name="cutoff_min_angle"        default="-2.5"/>
+<arg name="cutoff_max_angle"        default="2.5"/>
 
 <node pkg="landmark_map_builder" type="calc_landmark_node" name="calc_landmark_node" output="screen">
     <param name="landmark_class_file"   value="$(arg landmark_class_file)"/>
-    <param name="image_width"           value="1280"/>
-    <param name="prob_threshold"        value="0.9"/>
-    <param name="min_obj_size"          value="20"/>
-    <param name="cutoff_min_angle"      value="-2.5"/>
-    <param name="cutoff_max_angle"      value="2.5"/>
+    <param name="image_width"           value="$(arg image_width)"/>
+    <param name="prob_threshold"        value="$(arg prob_threshold)"/>
+    <param name="min_obj_size"          value="$(arg min_obj_size)"/>
+    <param name="cutoff_min_angle"      value="$(arg cutoff_min_angle)"/>
+    <param name="cutoff_max_angle"      value="$(arg cutoff_max_angle)"/>
     <remap from="/scan"                 to="/rfans/surestar_scan"/>
 </node>
 
